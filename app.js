@@ -6,7 +6,7 @@ const apiBase = "/api/mosques";
 
 const map = L.map("map", {
   zoomControl: true,
-  minZoom: 12,
+  minZoom: 7,
   maxZoom: 18,
 });
 
@@ -27,6 +27,7 @@ let timerInterval = null;
 
 const showServeInput = document.getElementById("showServe");
 const showNoServeInput = document.getElementById("showNoServe");
+const showJilapiInput = document.getElementById("showJilapi");
 const calendarDateInput = document.getElementById("calendarDate");
 const searchTextInput = document.getElementById("searchText");
 const quickFoodInput = document.getElementById("quickFood");
@@ -40,6 +41,137 @@ const findNearbyBtn = document.getElementById("findNearbyBtn");
 const showAllBtn = document.getElementById("showAllBtn");
 const clearRouteBtn = document.getElementById("clearRouteBtn");
 const todayBtn = document.getElementById("todayBtn");
+const divisionSelect = document.getElementById("divisionSelect");
+const heroQuote = document.getElementById("heroQuote");
+const countBiryani = document.getElementById("countBiryani");
+const countMuri = document.getElementById("countMuri");
+const countJilapi = document.getElementById("countJilapi");
+const countNoFood = document.getElementById("countNoFood");
+const countAgree = document.getElementById("countAgree");
+const countDisagree = document.getElementById("countDisagree");
+
+const divisionMapView = {
+  dhaka: { lat: 23.8103, lng: 90.4125, zoom: 10 },
+  chattogram: { lat: 22.3569, lng: 91.7832, zoom: 10 },
+  rajshahi: { lat: 24.3745, lng: 88.6042, zoom: 10 },
+  khulna: { lat: 22.8456, lng: 89.5403, zoom: 10 },
+  barishal: { lat: 22.701, lng: 90.3535, zoom: 10 },
+  sylhet: { lat: 24.8949, lng: 91.8687, zoom: 10 },
+  rangpur: { lat: 25.7439, lng: 89.2752, zoom: 10 },
+  mymensingh: { lat: 24.7471, lng: 90.4203, zoom: 10 },
+};
+
+const divisionBounds = {
+  dhaka: [[23.1, 89.9], [24.8, 91.8]],
+  chattogram: [[20.6, 91.0], [23.3, 92.8]],
+  rajshahi: [[23.7, 88.0], [25.3, 89.3]],
+  khulna: [[21.3, 88.8], [23.2, 90.0]],
+  barishal: [[21.7, 89.7], [23.0, 91.2]],
+  sylhet: [[24.3, 91.3], [25.4, 92.6]],
+  rangpur: [[25.0, 88.7], [26.4, 89.9]],
+  mymensingh: [[24.1, 89.7], [25.2, 91.2]],
+};
+
+const prayerQuotes = [
+  "নামাজ মুমিনের মেরুদণ্ড।",
+  "নামাজ হৃদয়ের শান্তি ও আত্মার প্রশান্তি।",
+  "নামাজ মানুষকে অন্যায় থেকে বিরত রাখে।",
+  "দুনিয়ার ব্যস্ততায়ও নামাজ যেন না ভুলে যাই।",
+  "পাঁচ ওয়াক্ত নামাজ—সাফল্যের চাবিকাঠি।",
+  "নামাজই আল্লাহর সাথে বান্দার সরাসরি যোগাযোগ।",
+  "যে নামাজকে ধরে রাখে, আল্লাহ তাকে সম্মানিত করেন।",
+  "নামাজ জীবনের শৃঙ্খলা শেখায়।",
+  "কষ্টের সময় নামাজ, সুখের সময় শোকর।",
+  "নামাজে আছে মুক্তি, শান্তি ও বরকত।",
+];
+
+function setRandomPrayerQuote() {
+  if (!heroQuote || !prayerQuotes.length) {
+    return;
+  }
+
+  const index = Math.floor(Math.random() * prayerQuotes.length);
+  heroQuote.textContent = prayerQuotes[index];
+}
+
+function isPointInBounds(lat, lng, bounds) {
+  const [[south, west], [north, east]] = bounds;
+  return lat >= south && lat <= north && lng >= west && lng <= east;
+}
+
+function matchesDivisionFilter(entry) {
+  if (!divisionSelect || !divisionSelect.value) {
+    return true;
+  }
+
+  const bounds = divisionBounds[divisionSelect.value];
+  if (!bounds) {
+    return true;
+  }
+
+  return isPointInBounds(entry.lat, entry.lng, bounds);
+}
+
+function matchesFoodToggle(entry) {
+  if (entry.foodType === "biryani") {
+    return showServeInput.checked;
+  }
+
+  if (entry.foodType === "jilapi") {
+    return showJilapiInput ? showJilapiInput.checked : true;
+  }
+
+  return showNoServeInput.checked;
+}
+
+function entryMatchesCurrentFilters(entry) {
+  if (focusedMosqueId && entry.id !== focusedMosqueId) {
+    return false;
+  }
+
+  if (!matchesDivisionFilter(entry)) {
+    return false;
+  }
+
+  if (!matchesFoodToggle(entry)) {
+    return false;
+  }
+
+  if (selectedLocation) {
+    const nearbyRange = Number(nearbyRangeInput.value);
+    const distanceKm = haversineDistanceKm(
+      selectedLocation.lat,
+      selectedLocation.lng,
+      entry.lat,
+      entry.lng
+    );
+
+    if (distanceKm > nearbyRange) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function updateCounts() {
+  const visibleEntries = markers.filter((entry) => entryMatchesCurrentFilters(entry));
+
+  const biryaniTotal = visibleEntries.filter((entry) => entry.foodType === "biryani").length;
+  const muriTotal = visibleEntries.filter((entry) => entry.foodType === "muri").length;
+  const jilapiTotal = visibleEntries.filter((entry) => entry.foodType === "jilapi").length;
+  const noFoodTotal = visibleEntries.filter((entry) => entry.foodType === "none").length;
+
+  const agreeTotal = visibleEntries.reduce((sum, entry) => sum + Number(entry.verifyCount || 0), 0);
+  const disagreeTotal = visibleEntries.reduce((sum, entry) => sum + Number(entry.disagreeCount || 0), 0);
+
+  if (countBiryani) countBiryani.textContent = String(biryaniTotal);
+  if (countMuri) countMuri.textContent = String(muriTotal);
+  if (countJilapi) countJilapi.textContent = String(jilapiTotal);
+  if (countNoFood) countNoFood.textContent = String(noFoodTotal);
+  if (countAgree) countAgree.textContent = String(agreeTotal);
+  if (countDisagree) countDisagree.textContent = String(disagreeTotal);
+}
 
 function getTodayDateString() {
   const now = new Date();
@@ -227,6 +359,12 @@ function clearSelectedLocation() {
 }
 
 function addMosqueEntry(entry) {
+  const existingIndex = markers.findIndex((item) => item.id === entry.id);
+  if (existingIndex !== -1) {
+    markers[existingIndex].marker.removeFrom(map);
+    markers.splice(existingIndex, 1);
+  }
+
   const marker = L.marker([entry.lat, entry.lng], {
     icon: createIcon(entry.foodType),
   });
@@ -244,9 +382,7 @@ function addMosqueEntry(entry) {
       entry.trustScore
     )})<br/>Votes: ✅ ${entry.verifyCount} | ❌ ${disagreeCount}${proofRow}<br/><button class="route-btn" data-lat="${
       entry.lat
-    }" data-lng="${entry.lng}" data-name="${entry.name}">🧭 Show route</button> <button class="share-btn" data-id="${
-      entryId
-    }">🔗 Share</button> <button class="verify-btn" data-id="${
+    }" data-lng="${entry.lng}" data-name="${entry.name}">🧭 Show route</button> <button class="verify-btn" data-id="${
       entryId
     }">✅ সহমত</button> <button class="disagree-btn" data-id="${entryId}">❌ অসহমত</button>`
   );
@@ -261,41 +397,18 @@ function addMosqueEntry(entry) {
 }
 
 function renderMarkers() {
-  const showServe = showServeInput.checked;
-  const showNoServe = showNoServeInput.checked;
-  const nearbyRange = Number(nearbyRangeInput.value);
-
   markers.forEach((entry) => {
-    if (focusedMosqueId && entry.id !== focusedMosqueId) {
+    if (!entryMatchesCurrentFilters(entry)) {
       entry.marker.removeFrom(map);
       return;
     }
 
-    const biryaniMatch =
-      (entry.foodType === "biryani" && showServe) ||
-      (entry.foodType !== "biryani" && showNoServe);
-
-    if (!biryaniMatch) {
-      entry.marker.removeFrom(map);
-      return;
+    if (!map.hasLayer(entry.marker)) {
+      entry.marker.addTo(map);
     }
-
-    if (selectedLocation) {
-      const distanceKm = haversineDistanceKm(
-        selectedLocation.lat,
-        selectedLocation.lng,
-        entry.lat,
-        entry.lng
-      );
-
-      if (distanceKm > nearbyRange) {
-        entry.marker.removeFrom(map);
-        return;
-      }
-    }
-
-    entry.marker.addTo(map);
   });
+
+  updateCounts();
 }
 
 function updateNearbyList() {
@@ -319,13 +432,17 @@ function updateNearbyList() {
 
   nearbyCircle = L.circle([selectedLocation.lat, selectedLocation.lng], {
     radius: nearbyRange * 1000,
-    color: "#0f766e",
-    fillColor: "#14b8a6",
-    fillOpacity: 0.07,
-    weight: 2,
+    color: "#dc2626",
+    fillColor: "#fb7185",
+    fillOpacity: 0.18,
+    weight: 3,
+    dashArray: "6 4",
   }).addTo(map);
+  nearbyCircle.bringToFront();
 
   const nearby = markers
+    .filter((entry) => matchesDivisionFilter(entry))
+    .filter((entry) => matchesFoodToggle(entry))
     .map((entry) => ({
       ...entry,
       distanceKm: haversineDistanceKm(
@@ -359,9 +476,7 @@ function updateNearbyList() {
           entry.trustScore
         )})<br/>Votes: ✅ ${entry.verifyCount} | ❌ ${disagreeCount}<br/><button class="route-btn" data-lat="${entry.lat}" data-lng="${entry.lng}" data-name="${
           entry.name
-        }">🧭 Show route</button> <button class="share-btn" data-id="${
-          entry.id
-        }">🔗 Share</button> <button class="verify-btn" data-id="${
+        }">🧭 Show route</button> <button class="verify-btn" data-id="${
           entry.id
         }">✅ সহমত</button> <button class="disagree-btn" data-id="${entry.id}">❌ অসহমত</button></li>`
         );
@@ -407,7 +522,7 @@ function getDeviceLocation() {
       (position) => resolve(position),
       (error) => {
         if (error && error.code === error.PERMISSION_DENIED) {
-          reject(new Error("Location permission denied"));
+          reject(new Error("Location permission denied. Browser/site settings থেকে location Allow করুন"));
           return;
         }
 
@@ -665,27 +780,11 @@ async function disagreeMosqueEntry(entryId) {
   return response.json();
 }
 
-function shareMosque(entryId) {
-  const url = new URL(window.location.href);
-  url.searchParams.set("mosque", entryId);
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard
-      .writeText(url.toString())
-      .then(() => {
-        locationText.textContent = "Share link copied.";
-      })
-      .catch(() => {
-        locationText.textContent = url.toString();
-      });
-    return;
-  }
-
-  locationText.textContent = url.toString();
-}
-
 showServeInput.addEventListener("change", renderMarkers);
 showNoServeInput.addEventListener("change", renderMarkers);
+if (showJilapiInput) {
+  showJilapiInput.addEventListener("change", renderMarkers);
+}
 nearbyRangeInput.addEventListener("input", () => {
   renderMarkers();
   updateNearbyList();
@@ -716,6 +815,25 @@ quickFoodInput.addEventListener("change", () => {
     nearbyHint.textContent = error.message;
   });
 });
+
+if (divisionSelect) {
+  divisionSelect.addEventListener("change", () => {
+    const key = divisionSelect.value;
+    if (!key || !divisionMapView[key]) {
+      renderMarkers();
+      updateNearbyList();
+      return;
+    }
+
+    const target = divisionMapView[key];
+    map.flyTo([target.lat, target.lng], target.zoom);
+    locationText.textContent = `Map moved to ${key} division.`;
+    focusedMosqueId = null;
+    clearRouteLine();
+    renderMarkers();
+    updateNearbyList();
+  });
+}
 
 findNearbyBtn.addEventListener("click", () => {
   findNearbyBtn.setAttribute("disabled", "true");
@@ -784,8 +902,13 @@ document.addEventListener("submit", (event) => {
   }
 
   saveMosqueToApi(formData)
-    .then(() => loadMosquesFromApi())
-    .then(() => {
+    .then((createdEntry) => {
+      addMosqueEntry(createdEntry);
+      renderMarkers();
+      updateNearbyList();
+      if (createdEntry && Number.isFinite(createdEntry.lat) && Number.isFinite(createdEntry.lng)) {
+        map.flyTo([createdEntry.lat, createdEntry.lng], 15);
+      }
       locationText.textContent = "নতুন mosque map-এ যোগ হয়েছে।";
       map.closePopup();
     })
@@ -858,14 +981,6 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  if (target.classList.contains("share-btn")) {
-    const entryId = target.dataset.id;
-    if (entryId) {
-      shareMosque(entryId);
-    }
-    return;
-  }
-
 });
 
 function focusFromQueryParam() {
@@ -906,4 +1021,5 @@ loadMosquesFromApi()
   });
 
 updateLocationTimerText();
+setRandomPrayerQuote();
 registerServiceWorker();

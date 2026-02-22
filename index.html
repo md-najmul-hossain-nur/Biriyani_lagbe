@@ -17,21 +17,20 @@
   <body>
     <header class="app-header">
       <div class="title-wrap">
-        <h1>Biryani Lagbe 🍛</h1>
-        <p>
-          Community food map — কোন মসজিদে বিরিয়ানি দেয়, কোথায় muri দেয়, আর
-          কোথায় কিছুই দেয় না
-        </p>
+        <h1 class="brand-title">Biryani Lagbe <span class="brand-emoji">🍛</span></h1>
+        <div class="brand-chip">Mosque Food Community Map</div>
+        <p id="heroQuote">নামাজ হৃদয়ের শান্তি ও আত্মার প্রশান্তি।</p>
       </div>
       <div class="status-pill">Live Community Update</div>
     </header>
 
     <section class="top-legend card">
-      <span><i class="emoji">🍛</i> Biryani</span>
-      <span><i class="emoji">🥣</i> Muri</span>
-      <span><i class="emoji">🚫</i> No food</span>
-      <span><i class="emoji">✅</i> সহমত = verification vote</span>
-      <span><i class="emoji">❌</i> অসহমত = disagree vote</span>
+      <span><i class="emoji">🍛</i> Biryani: <strong id="countBiryani">0</strong></span>
+      <span><i class="emoji">🥣</i> Muri: <strong id="countMuri">0</strong></span>
+      <span><i class="emoji">🥨</i> Jilapi: <strong id="countJilapi">0</strong></span>
+      <span><i class="emoji">🚫</i> No food: <strong id="countNoFood">0</strong></span>
+      <span><i class="emoji">✅</i> সহমত: <strong id="countAgree">0</strong></span>
+      <span><i class="emoji">❌</i> অসহমত: <strong id="countDisagree">0</strong></span>
     </section>
 
     <main class="layout">
@@ -46,13 +45,31 @@
             <input type="checkbox" id="showNoServe" checked />
             যেসব মসজিদে biryani দেয় না
           </label>
+          <label>
+            <input type="checkbox" id="showJilapi" checked />
+            যেসব মসজিদে jilapi দেয়
+          </label>
 
           <label for="calendarDate" class="calendar-label">📅 Calendar date</label>
           <input type="date" id="calendarDate" class="calendar-input" />
           <button type="button" id="todayBtn">Today</button>
 
+          <label for="divisionSelect">BD division search</label>
+          <select id="divisionSelect">
+            <option value="">Select division</option>
+            <option value="dhaka">Dhaka</option>
+            <option value="chattogram">Chattogram</option>
+            <option value="rajshahi">Rajshahi</option>
+            <option value="khulna">Khulna</option>
+            <option value="barishal">Barishal</option>
+            <option value="sylhet">Sylhet</option>
+            <option value="rangpur">Rangpur</option>
+            <option value="mymensingh">Mymensingh</option>
+          </select>
+
           <label for="searchText">Search mosque</label>
           <input type="text" id="searchText" placeholder="Type mosque name" />
+          <p id="searchScopeHint">Division select করলে search ওই division-এর mosque এর মধ্যে হবে।</p>
 
           <label for="quickFood">Quick food filter</label>
           <select id="quickFood">
@@ -85,9 +102,18 @@
       <div class="credit-wrap">
         <p class="credit-text">by Md. Najmul Hossain Nur</p>
         <nav class="social-links" aria-label="Social media links">
-          <a href="https://www.facebook.com/najmulhossain.nur" target="_blank" rel="noopener noreferrer">Facebook</a>
-          <a href="https://www.instagram.com/najmul_hossain_nur/" target="_blank" rel="noopener noreferrer">Instagram</a>
-          <a href="https://www.linkedin.com/in/md-najmul-hossain-nur-8726b12a4/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="https://www.facebook.com/najmulhossain.nur" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <span class="social-icon" aria-hidden="true">ⓕ</span>
+            <span>Facebook</span>
+          </a>
+          <a href="https://www.instagram.com/najmul_hossain_nur/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <span class="social-icon" aria-hidden="true">◎</span>
+            <span>Instagram</span>
+          </a>
+          <a href="https://www.linkedin.com/in/md-najmul-hossain-nur-8726b12a4/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <span class="social-icon" aria-hidden="true">in</span>
+            <span>LinkedIn</span>
+          </a>
         </nav>
       </div>
     </footer>
