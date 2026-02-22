@@ -5,13 +5,13 @@ const path = require("path");
 
 const port = process.env.PORT || 3000;
 
-const dataDir = path.join(__dirname, "data");
+// Render-এ persistent ডেটার জন্য
+const dataDir = path.join(process.env.HOME || __dirname, ".data");
 const dataFile = path.join(dataDir, "mosques.json");
 
 async function ensureStore() {
-  await fs.mkdir(dataDir, { recursive: true });
-
   try {
+    await fs.mkdir(dataDir, { recursive: true });
     await fs.access(dataFile);
   } catch {
     await fs.writeFile(dataFile, "[]", "utf8");
@@ -19,9 +19,13 @@ async function ensureStore() {
 }
 
 async function readMosques() {
-  const content = await fs.readFile(dataFile, "utf8");
-  const parsed = JSON.parse(content);
-  return Array.isArray(parsed) ? parsed : [];
+  try {
+    const content = await fs.readFile(dataFile, "utf8");
+    const parsed = JSON.parse(content);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 async function writeMosques(records) {
@@ -39,46 +43,30 @@ function sendText(res, statusCode, text) {
 }
 
 function getContentType(filePath) {
-  if (filePath.endsWith(".html")) {
-    return "text/html; charset=utf-8";
-  }
-
-  if (filePath.endsWith(".css")) {
-    return "text/css; charset=utf-8";
-  }
-
-  if (filePath.endsWith(".js")) {
-    return "application/javascript; charset=utf-8";
-  }
-
-  if (filePath.endsWith(".json")) {
-    return "application/json; charset=utf-8";
-  }
-
+  if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
+  if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
+  if (filePath.endsWith(".js")) return "application/javascript; charset=utf-8";
+  if (filePath.endsWith(".json")) return "application/json; charset=utf-8";
   return "text/plain; charset=utf-8";
 }
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
-
     req.on("data", (chunk) => {
       body += chunk;
     });
-
     req.on("end", () => {
       if (!body) {
         resolve({});
         return;
       }
-
       try {
         resolve(JSON.parse(body));
       } catch {
         reject(new Error("Invalid JSON body"));
       }
     });
-
     req.on("error", reject);
   });
 }
@@ -111,7 +99,6 @@ async function handleApi(req, res) {
 
         all[index].verifyCount = Number(all[index].verifyCount || 0) + 1;
         await writeMosques(all);
-
         sendJson(res, 200, all[index]);
       } catch {
         sendJson(res, 500, { message: "Failed to verify mosque data" });
@@ -146,14 +133,12 @@ async function handleApi(req, res) {
       const all = await readMosques();
       all.push(newEntry);
       await writeMosques(all);
-
       sendJson(res, 201, newEntry);
     } catch (error) {
       if (error.message === "Invalid JSON body") {
         sendJson(res, 400, { message: "Invalid JSON body" });
         return;
       }
-
       sendJson(res, 500, { message: "Failed to save mosque data" });
     }
     return;
@@ -187,6 +172,16 @@ async function handleStatic(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
   if (!req.url) {
     sendText(res, 400, "Bad Request");
     return;
@@ -202,11 +197,12 @@ const server = http.createServer(async (req, res) => {
 
 ensureStore()
   .then(() => {
-    server.listen(port, () => {
-      console.log(`Server running at http://localhost:${port}`);
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`✅ Server running on port ${port}`);
+      console.log(`📍 Data stored at: ${dataFile}`);
     });
   })
   .catch((error) => {
-    console.error("Failed to initialize data store", error);
+    console.error("❌ Failed to initialize data store", error);
     process.exit(1);
   });
