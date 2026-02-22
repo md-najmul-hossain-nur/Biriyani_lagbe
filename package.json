@@ -5,10 +5,6 @@
   "description": "Dhaka mosque food map with persistent public data",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
-  },
-  "keywords": ["mosque", "biryani", "map"],
-  "author": "md-najmul-hossain-nur",
-  "license": "MIT"
+    "start": "node server.js"
+  }
 }
