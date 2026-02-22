@@ -85,13 +85,23 @@ const prayerQuotes = [
   "নামাজে আছে মুক্তি, শান্তি ও বরকত।",
 ];
 
+let quoteIndex = Math.floor(Math.random() * prayerQuotes.length);
+
 function setRandomPrayerQuote() {
   if (!heroQuote || !prayerQuotes.length) {
     return;
   }
 
-  const index = Math.floor(Math.random() * prayerQuotes.length);
-  heroQuote.textContent = prayerQuotes[index];
+  heroQuote.textContent = prayerQuotes[quoteIndex];
+}
+
+function rotatePrayerQuote() {
+  if (!heroQuote || !prayerQuotes.length) {
+    return;
+  }
+
+  quoteIndex = (quoteIndex + 1) % prayerQuotes.length;
+  heroQuote.textContent = prayerQuotes[quoteIndex];
 }
 
 function isPointInBounds(lat, lng, bounds) {
@@ -1022,4 +1032,5 @@ loadMosquesFromApi()
 
 updateLocationTimerText();
 setRandomPrayerQuote();
+setInterval(rotatePrayerQuote, 7000);
 registerServiceWorker();
