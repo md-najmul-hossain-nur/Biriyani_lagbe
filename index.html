@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Biryani Lagbe | Dhaka Mosque Map</title>
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="manifest.webmanifest" />
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -14,52 +16,80 @@
   </head>
   <body>
     <header class="app-header">
-      <h1>Biryani Lagbe 🍛</h1>
-      <p>
-        Dhaka map (Gulshan 2 → Norda → Uttara Badda area): কোন মসজিদে বিরিয়ানি
-        দেয় / দেয় না
-      </p>
+      <div class="title-wrap">
+        <h1>Biryani Lagbe 🍛</h1>
+        <p>
+          Community food map — কোন মসজিদে বিরিয়ানি দেয়, কোথায় muri দেয়, আর
+          কোথায় কিছুই দেয় না
+        </p>
+      </div>
+      <div class="status-pill">Live Community Update</div>
     </header>
+
+    <section class="top-legend card">
+      <span><i class="emoji">🍛</i> Biryani</span>
+      <span><i class="emoji">🥣</i> Muri</span>
+      <span><i class="emoji">🚫</i> No food</span>
+      <span><i class="emoji">✅</i> সহমত = verification vote</span>
+      <span><i class="emoji">❌</i> অসহমত = disagree vote</span>
+    </section>
 
     <main class="layout">
       <aside class="sidebar">
         <section class="controls card">
-          <h2>Filters</h2>
+          <h2>Filter & Nearby Search</h2>
           <label>
             <input type="checkbox" id="showServe" checked />
-            Show mosques that serve biryani
+            যেসব মসজিদে biryani দেয়
           </label>
           <label>
             <input type="checkbox" id="showNoServe" checked />
-            Show mosques that do not serve biryani
+            যেসব মসজিদে biryani দেয় না
           </label>
+
+          <label for="calendarDate" class="calendar-label">📅 Calendar date</label>
+          <input type="date" id="calendarDate" class="calendar-input" />
+          <button type="button" id="todayBtn">Today</button>
+
+          <label for="searchText">Search mosque</label>
+          <input type="text" id="searchText" placeholder="Type mosque name" />
+
+          <label for="quickFood">Quick food filter</label>
+          <select id="quickFood">
+            <option value="all">All food types</option>
+            <option value="biryani">Biryani only</option>
+            <option value="muri">Muri only</option>
+            <option value="jilapi">Jilapi only</option>
+            <option value="none">No food only</option>
+          </select>
 
           <label for="nearbyRange">Nearby distance: <strong><span id="nearbyRangeValue">5</span> km</strong></label>
           <input id="nearbyRange" type="range" min="1" max="10" value="5" step="1" />
-          <button type="button" id="findNearbyBtn">Find nearby from my location</button>
-          <p id="nearbyHint">Pick distance + click to see nearby food spots.</p>
-          <p id="locationText">Location: Not selected (click map to set)</p>
+          <button type="button" id="findNearbyBtn">আমার location থেকে nearby দেখাও</button>
+          <button type="button" id="showAllBtn">সব mosque আবার দেখাও</button>
+          <button type="button" id="clearRouteBtn">Clear route</button>
+          <p id="nearbyHint">Distance বেছে নিয়ে nearby list দেখুন।</p>
+          <p id="locationText">Location: map-এ click করে set করুন</p>
           <p id="geoTimer">Location age: --</p>
           <ul id="nearbyList" class="nearby-list"></ul>
-        </section>
-
-        <section class="legend card">
-          <span><i class="emoji">🍛</i> Biryani</span>
-          <span><i class="emoji">🥣</i> Muri</span>
-          <span><i class="emoji">🚫</i> No food</span>
-          <span><i class="emoji">✅</i> সহমত = verification vote</span>
         </section>
       </aside>
 
       <section class="map-wrap">
+        <div class="map-top-note">Tip: Map-এ click করে mosque add করুন, আর Show route চাপলে shortest route দেখাবে</div>
         <div id="map" aria-label="Dhaka mosque biryani map"></div>
       </section>
     </main>
 
     <footer class="app-footer">
-      <p>
-        Public form submit করলে data server-এ store হয়, তাই refresh দিলে data থাকবে।
-      </p>
+      <div class="credit-wrap">
+        <p class="credit-text">by Md. Najmul Hossain Nur</p>
+        <nav class="social-links" aria-label="Social media links">
+          <a href="https://www.facebook.com/najmulhossain.nur" target="_blank" rel="noopener noreferrer">Facebook</a>
+          <a href="https://www.instagram.com/najmul_hossain_nur/" target="_blank" rel="noopener noreferrer">Instagram</a>
+          <a href="https://www.linkedin.com/in/md-najmul-hossain-nur-8726b12a4/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </nav>
+      </div>
     </footer>
 
     <script
