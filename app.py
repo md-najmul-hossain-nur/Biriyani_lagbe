@@ -18,8 +18,10 @@ app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
 
 def get_db_connection() -> sqlite3.Connection:
-    connection = sqlite3.connect(DB_PATH)
+    connection = sqlite3.connect(DB_PATH, timeout=30)
     connection.row_factory = sqlite3.Row
+    connection.execute("PRAGMA journal_mode=WAL")
+    connection.execute("PRAGMA busy_timeout = 30000")
     return connection
 
 
@@ -430,7 +432,8 @@ def mosques_route():
 
                 rows = connection.execute(sql, params).fetchall()
                 connection.commit()
-        except sqlite3.Error:
+        except sqlite3.Error as error:
+            app.logger.exception("Database read failed: %s", error)
             return jsonify({"message": "Database read failed"}), 500
 
         return jsonify([row_to_api_dict(row) for row in rows])
@@ -487,7 +490,8 @@ def mosques_route():
                 ),
             )
             connection.commit()
-    except sqlite3.Error:
+    except sqlite3.Error as error:
+        app.logger.exception("Database write failed: %s", error)
         return jsonify({"message": "Database write failed"}), 500
 
     return jsonify(new_entry), 201
