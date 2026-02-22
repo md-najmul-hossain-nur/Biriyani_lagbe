@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Biryani Lagbe | Dhaka Mosque Map</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Biryani Lagbe 🍛</h1>
+      <p>
+        Dhaka map (Gulshan 2 → Norda → Uttara Badda area): কোন মসজিদে বিরিয়ানি
+        দেয় / দেয় না
+      </p>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <section class="controls card">
+          <h2>Filters</h2>
+          <label>
+            <input type="checkbox" id="showServe" checked />
+            Show mosques that serve biryani
+          </label>
+          <label>
+            <input type="checkbox" id="showNoServe" checked />
+            Show mosques that do not serve biryani
+          </label>
+
+          <label for="nearbyRange">Nearby distance: <strong><span id="nearbyRangeValue">5</span> km</strong></label>
+          <input id="nearbyRange" type="range" min="1" max="10" value="5" step="1" />
+          <button type="button" id="findNearbyBtn">Find nearby from my location</button>
+          <p id="nearbyHint">Pick distance + click to see nearby food spots.</p>
+          <p id="locationText">Location: Not selected (click map to set)</p>
+          <p id="geoTimer">Location age: --</p>
+          <ul id="nearbyList" class="nearby-list"></ul>
+        </section>
+
+        <section class="legend card">
+          <span><i class="emoji">🍛</i> Biryani</span>
+          <span><i class="emoji">🥣</i> Muri</span>
+          <span><i class="emoji">🚫</i> No food</span>
+          <span><i class="emoji">✅</i> সহমত = verification vote</span>
+        </section>
+      </aside>
+
+      <section class="map-wrap">
+        <div id="map" aria-label="Dhaka mosque biryani map"></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        Public form submit করলে data server-এ store হয়, তাই refresh দিলে data থাকবে।
+      </p>
+    </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="app.js"></script>
+  </body>
+</html>

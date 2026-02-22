@@ -1,0 +1,203 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.app-header,
+.layout,
+.app-footer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.app-header p,
+.app-footer p {
+  margin: 0.35rem 0 0;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.sidebar {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 0.9rem;
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.02rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.controls label {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.5rem 0.6rem;
+  cursor: pointer;
+}
+
+.controls select,
+.controls button {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: #ffffff;
+}
+
+.controls input[type="range"] {
+  width: 100%;
+}
+
+#findNearbyBtn {
+  cursor: pointer;
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #ffffff;
+}
+
+#nearbyHint {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #475569;
+}
+
+#geoTimer {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.nearby-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.nearby-list li {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.verify-btn {
+  margin-top: 0.35rem;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 6px;
+  padding: 0.24rem 0.45rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+#locationText {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.map-add-form {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 220px;
+}
+
+.map-add-form input,
+.map-add-form select,
+.map-add-form button {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+}
+
+.map-add-form button {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.legend {
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.92rem;
+}
+
+.emoji {
+  font-style: normal;
+  margin-right: 0.3rem;
+}
+
+.map-wrap {
+  min-height: 70vh;
+}
+
+#map {
+  width: 100%;
+  height: 70vh;
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+}
+
+.app-footer {
+  font-size: 0.9rem;
+  color: #4b5563;
+  padding-top: 0;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .map-wrap,
+  #map {
+    min-height: 60vh;
+    height: 60vh;
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "biriyani-lagbe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dhaka mosque food map with persistent public data",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
