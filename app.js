@@ -685,7 +685,9 @@ async function loadMosquesFromApi() {
     params.set("q", q);
   }
 
-  const response = await fetch(`${apiBase}?${params.toString()}`);
+  const response = await fetch(`${apiBase}?${params.toString()}`, {
+    cache: "no-store",
+  });
   if (!response.ok) {
     let message = `Failed to fetch mosque list (${response.status})`;
     try {

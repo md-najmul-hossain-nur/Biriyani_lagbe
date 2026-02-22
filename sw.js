@@ -1,4 +1,4 @@
-const CACHE_NAME = "biryani-lagbe-v1";
+const CACHE_NAME = "biryani-lagbe-v2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -25,6 +25,12 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
     return;
   }
 
