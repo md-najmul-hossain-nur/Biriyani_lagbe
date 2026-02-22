@@ -21,7 +21,10 @@ def get_db_connection() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DB_PATH, timeout=30)
     connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA journal_mode=DELETE")
+    try:
+        connection.execute("PRAGMA journal_mode=DELETE")
+    except sqlite3.OperationalError:
+        pass
     connection.execute("PRAGMA busy_timeout = 30000")
     return connection
 
