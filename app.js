@@ -24,6 +24,7 @@ let focusedMosqueId = null;
 let popupLocation = null;
 let locationSelectedAt = null;
 let timerInterval = null;
+let isBackgroundSyncRunning = false;
 
 const showServeInput = document.getElementById("showServe");
 const showNoServeInput = document.getElementById("showNoServe");
@@ -200,10 +201,6 @@ function getClientId() {
   const created = `client-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   localStorage.setItem(key, created);
   return created;
-}
-
-if (!calendarDateInput.value) {
-  calendarDateInput.value = getTodayDateString();
 }
 
 function foodEmoji(foodType) {
@@ -672,14 +669,17 @@ function createMosquePayloadFromPopup() {
 }
 
 async function loadMosquesFromApi() {
-  const selectedDate = calendarDateInput.value || getTodayDateString();
+  const selectedDate = calendarDateInput.value.trim();
   const q = searchTextInput.value.trim();
   const quickFood = quickFoodInput.value;
 
   const params = new URLSearchParams({
-    date: selectedDate,
     quickFood,
   });
+
+  if (selectedDate) {
+    params.set("date", selectedDate);
+  }
 
   if (q) {
     params.set("q", q);
@@ -716,6 +716,21 @@ async function loadMosquesFromApi() {
 
   renderMarkers();
   updateNearbyList();
+}
+
+async function syncMosquesInBackground() {
+  if (isBackgroundSyncRunning) {
+    return;
+  }
+
+  isBackgroundSyncRunning = true;
+  try {
+    await loadMosquesFromApi();
+  } catch {
+    // Keep silent in background sync to avoid noisy UX.
+  } finally {
+    isBackgroundSyncRunning = false;
+  }
 }
 
 async function saveMosqueToApi(formData) {
@@ -1036,3 +1051,17 @@ updateLocationTimerText();
 setRandomPrayerQuote();
 setInterval(rotatePrayerQuote, 7000);
 registerServiceWorker();
+
+setInterval(() => {
+  if (document.visibilityState !== "visible") {
+    return;
+  }
+
+  syncMosquesInBackground();
+}, 10000);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    syncMosquesInBackground();
+  }
+});

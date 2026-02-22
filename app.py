@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -18,9 +18,10 @@ app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 
 
 def get_db_connection() -> sqlite3.Connection:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(DB_PATH, timeout=30)
     connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA journal_mode=WAL")
+    connection.execute("PRAGMA journal_mode=DELETE")
     connection.execute("PRAGMA busy_timeout = 30000")
     return connection
 
@@ -184,6 +185,23 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def parse_iso_datetime(value: str | None) -> datetime | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+
+    text = value.strip()
+
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+
+    return parsed.astimezone(timezone.utc)
+
+
 def today_str() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
@@ -208,14 +226,18 @@ def is_valid_time(time_text: str | None) -> bool:
 
 
 def cleanup_expired_data(connection: sqlite3.Connection) -> None:
-    today = today_str()
+    threshold = datetime.now(timezone.utc) - timedelta(hours=24)
 
-    expired_ids = [
-        row["id"]
-        for row in connection.execute(
-            "SELECT id FROM mosques WHERE event_date < ?", (today,)
-        ).fetchall()
-    ]
+    expired_ids: list[str] = []
+    rows = connection.execute("SELECT id, created_at FROM mosques").fetchall()
+
+    for row in rows:
+        created_at = parse_iso_datetime(row["created_at"])
+        if created_at is None:
+            continue
+
+        if created_at <= threshold:
+            expired_ids.append(row["id"])
 
     if expired_ids:
         placeholders = ",".join(["?"] * len(expired_ids))
@@ -228,6 +250,13 @@ def cleanup_expired_data(connection: sqlite3.Connection) -> None:
         connection.execute(
             f"DELETE FROM mosques WHERE id IN ({placeholders})", expired_ids
         )
+
+
+def safe_cleanup_expired_data(connection: sqlite3.Connection) -> None:
+    try:
+        cleanup_expired_data(connection)
+    except sqlite3.Error as error:
+        app.logger.warning("Skipping cleanup due to sqlite error: %s", error)
 
 
 def trust_score(verify_count: int, updated_at: str) -> int:
@@ -367,9 +396,6 @@ def parse_mosque_payload() -> tuple[dict | None, int, str]:
     if start_time and end_time and start_time > end_time:
         return None, 400, "Start time cannot be after end time"
 
-    if event_date < today_str():
-        return None, 400, "Event date cannot be in the past"
-
     try:
         proof_image = save_uploaded_image(proof_file)
     except ValueError:
@@ -397,10 +423,10 @@ ensure_database()
 @app.route("/api/mosques/", methods=["GET", "POST"])
 def mosques_route():
     if request.method == "GET":
-        selected_date = request.args.get("date", "").strip() or today_str()
+        selected_date = request.args.get("date", "").strip()
         query_text = request.args.get("q", "").strip().lower()
         quick_food = request.args.get("quickFood", "all").strip().lower()
-        if not is_valid_date(selected_date):
+        if selected_date and not is_valid_date(selected_date):
             return jsonify({"message": "Invalid date format"}), 400
 
         if quick_food not in {"all", "biryani", "muri", "jilapi", "none"}:
@@ -408,17 +434,19 @@ def mosques_route():
 
         try:
             with get_db_connection() as connection:
-                cleanup_expired_data(connection)
+                safe_cleanup_expired_data(connection)
 
                 sql = """
                     SELECT id, name, lat, lng, food_type, prayer_slot, verify_count, disagree_count, created_at, updated_at,
                            event_date, start_time, end_time, proof_image, status
                     FROM mosques
-                    WHERE event_date = ?
+                    WHERE status = 'approved'
                 """
-                params: list = [selected_date]
+                params: list = []
 
-                sql += " AND status = 'approved'"
+                if selected_date:
+                    sql += " AND event_date = ?"
+                    params.append(selected_date)
 
                 if quick_food != "all":
                     sql += " AND food_type = ?"
@@ -462,7 +490,7 @@ def mosques_route():
 
     try:
         with get_db_connection() as connection:
-            cleanup_expired_data(connection)
+            safe_cleanup_expired_data(connection)
             connection.execute(
                 """
                 INSERT INTO mosques (
@@ -492,6 +520,11 @@ def mosques_route():
             connection.commit()
     except sqlite3.Error as error:
         app.logger.exception("Database write failed: %s", error)
+        text = str(error).lower()
+        if "locked" in text or "busy" in text:
+            return jsonify({"message": "Database busy, please try again"}), 503
+        if "readonly" in text:
+            return jsonify({"message": "Database is read-only on server"}), 500
         return jsonify({"message": "Database write failed"}), 500
 
     return jsonify(new_entry), 201
@@ -523,7 +556,7 @@ def vote_route(mosque_id: str, vote_type: str):
 
     try:
         with get_db_connection() as connection:
-            cleanup_expired_data(connection)
+            safe_cleanup_expired_data(connection)
 
             exists = connection.execute(
                 "SELECT id FROM mosques WHERE id = ? AND status = 'approved'", (mosque_id,)
@@ -579,7 +612,12 @@ def vote_route(mosque_id: str, vote_type: str):
                 (mosque_id,),
             ).fetchone()
             connection.commit()
-    except sqlite3.Error:
+    except sqlite3.Error as error:
+        text = str(error).lower()
+        if "locked" in text or "busy" in text:
+            return jsonify({"message": "Database busy, please try again"}), 503
+        if "readonly" in text:
+            return jsonify({"message": "Database is read-only on server"}), 500
         return jsonify({"message": "Database vote failed"}), 500
 
     return jsonify(row_to_api_dict(row))
