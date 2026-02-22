@@ -24,7 +24,13 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  // ✅ GET request শুধুমাত্র
   if (event.request.method !== "GET") {
+    return;
+  }
+
+  // ✅ chrome-extension URLs ignore করি
+  if (event.request.url.startsWith("chrome-extension://")) {
     return;
   }
 
@@ -36,13 +42,23 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(event.request)
         .then((response) => {
-          if (response.status === 200) {
+          // ✅ শুধুমাত্র valid response cache করি
+          if (response.status === 200 && response.type !== 'error') {
             const cloned = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
+            // ✅ Try-catch দিয়ে error handle করি
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, cloned).catch(() => {
+                  // Silent fail - কোনো error দেখাব না
+                });
+              })
+              .catch(() => {
+                // Cache open fail হলে ignore করি
+              });
           }
           return response;
         })
-        .catch(() => caches.match("/index.html"));
+        .catch(() => caches.match("/index.html"))
     })
   );
 });
