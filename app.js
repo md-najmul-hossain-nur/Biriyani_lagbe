@@ -941,7 +941,13 @@ document.addEventListener("submit", (event) => {
     })
     .catch((error) => {
       if (error instanceof TypeError) {
-        locationText.textContent = "Save failed: Python server off. Run 'python app.py' first.";
+        const isLocalHost =
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1";
+
+        locationText.textContent = isLocalHost
+          ? "Save failed: Python server off. Run 'python app.py' first."
+          : "Save failed: Server unavailable. Please reload and try again.";
         return;
       }
 

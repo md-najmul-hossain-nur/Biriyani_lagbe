@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -182,6 +183,21 @@ def ensure_database() -> None:
         )
 
         connection.commit()
+
+
+def ensure_database_with_retry(max_retries: int = 5, delay_seconds: float = 1.0) -> None:
+    for attempt in range(max_retries):
+        try:
+            ensure_database()
+            return
+        except sqlite3.OperationalError as error:
+            if "locked" not in str(error).lower():
+                raise
+
+            if attempt == max_retries - 1:
+                raise
+
+            time.sleep(delay_seconds)
 
 
 def now_iso() -> str:
@@ -419,7 +435,7 @@ def parse_mosque_payload() -> tuple[dict | None, int, str]:
     return payload, 200, "ok"
 
 
-ensure_database()
+ensure_database_with_retry()
 
 
 @app.route("/api/mosques", methods=["GET", "POST"])
